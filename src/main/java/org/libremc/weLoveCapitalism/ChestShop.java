@@ -1,22 +1,27 @@
 package org.libremc.weLoveCapitalism;
 
-import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.StringTokenizer;
+
 public class ChestShop {
     private Sign sign;
     private Chest chest;
-    private Player owner;
+    private String owner_uuid;
     private ItemStack item;
+    private long price;
+    private long gold_storage;
 
-    public ChestShop(Sign sign, Chest chest, Player owner, ItemStack item) {
+    public ChestShop(Sign sign, Chest chest, String uuid, ItemStack item, long price, long gold_storage) {
         this.sign = sign;
         this.chest = chest;
-        this.owner = owner;
+        this.owner_uuid = uuid;
         this.item = item;
+        this.price = price;
+        this.gold_storage = gold_storage;
     }
 
     public Sign getSign() {
@@ -35,12 +40,12 @@ public class ChestShop {
         this.chest = chest;
     }
 
-    public Player getOwner() {
-        return owner;
+    public String getOwner() {
+        return owner_uuid;
     }
 
-    public void setOwner(Player owner) {
-        this.owner = owner;
+    public void setOwner(String owner_uuid) {
+        this.owner_uuid = owner_uuid;
     }
 
     public ItemStack getItem() {
@@ -49,5 +54,42 @@ public class ChestShop {
 
     public void setItem(ItemStack item) {
         this.item = item;
+    }
+
+    public String getItemFormatted(){
+       String base = this.item.getType().name().replace('_', ' ');
+       StringTokenizer tok = new StringTokenizer(base, " ");
+
+       String ret = "";
+
+       while(tok.hasMoreElements()){
+           ret = ret.concat(tok.nextToken() + " ");
+       }
+
+       return ret;
+    }
+
+    public long getPrice() {
+        return price;
+    }
+
+    public void setPrice(long p) {
+        this.price = p;
+    }
+
+    public long getGoldStorage() {
+        return gold_storage;
+    }
+
+    public void addGoldStorage(long gold_storage) {
+        this.gold_storage += gold_storage;
+    }
+
+    public void removeGoldStorage(long gold_storage) {
+        this.gold_storage -= gold_storage;
+    }
+
+    public void setGoldStorage(long gold_storage) {
+        this.gold_storage = gold_storage;
     }
 }

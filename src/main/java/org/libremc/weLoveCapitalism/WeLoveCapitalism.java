@@ -3,11 +3,19 @@ package org.libremc.weLoveCapitalism;
 import org.bukkit.Bukkit;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.libremc.weLoveCapitalism.commands.WLCCommand;
+import org.libremc.weLoveCapitalism.listener.BlockBreakListener;
 import org.libremc.weLoveCapitalism.listener.BlockPlaceListener;
+import org.libremc.weLoveCapitalism.listener.InternalCommandListener;
 import org.libremc.weLoveCapitalism.listener.PlayerInteractListener;
+
+import net.milkbowl.vault.chat.Chat;
+import net.milkbowl.vault.economy.Economy;
+import net.milkbowl.vault.economy.EconomyResponse;
+import net.milkbowl.vault.permission.Permission;
 
 import javax.annotation.Nullable;
 import java.io.File;
@@ -19,9 +27,9 @@ import java.util.UUID;
 
 public final class WeLoveCapitalism extends JavaPlugin {
 
-    public static final String CHESTSHOP_DB_PATH = "chestshops.db";
+    private static Economy econ = null;
 
-    private static HashSet<WLCPlayer> WLC_players = new HashSet<>();
+    public static final String CHESTSHOP_DB_PATH = "chestshops.db";
 
     static WeLoveCapitalism instance;
 
@@ -42,6 +50,11 @@ public final class WeLoveCapitalism extends JavaPlugin {
         this.getCommand("wlc").setExecutor(new WLCCommand());
         getServer().getPluginManager().registerEvents(new BlockPlaceListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
+        getServer().getPluginManager().registerEvents(new InternalCommandListener(), this);
+        getServer().getPluginManager().registerEvents(new BlockBreakListener(), this);
+
+
+        setupEconomy();
 
         try {
             db = new Database(CHESTSHOP_DB_PATH);
@@ -58,6 +71,8 @@ public final class WeLoveCapitalism extends JavaPlugin {
 
     }
 
+
+
     @Override
     public void onDisable() {
         try {
@@ -67,25 +82,21 @@ public final class WeLoveCapitalism extends JavaPlugin {
         }
     }
 
-    public static HashSet<WLCPlayer> getWLCPlayers(){
-        return WLC_players;
-    }
-
-    public static void addWLCPlayer(@NotNull WLCPlayer player){
-        WLC_players.add(player);
-    }
-
-    public static WLCPlayer createWLCPlayer(Player player){
-        for(WLCPlayer p: getWLCPlayers()){
-            if(p.getUUID().compareTo(player.getUniqueId()) == 0){
-                Bukkit.broadcastMessage("Found");
-                return p;
-            }
+    private boolean setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            return false;
         }
-
-        Bukkit.broadcastMessage("New");
-        WLCPlayer wlcplayer = new WLCPlayer(player);
-        addWLCPlayer(wlcplayer);
-        return wlcplayer;
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            return false;
+        }
+        econ = rsp.getProvider();
+        return econ != null;
     }
+
+
+    public static Economy getEconomy(){
+        return econ;
+    }
+
 }
