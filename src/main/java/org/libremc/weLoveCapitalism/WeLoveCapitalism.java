@@ -1,29 +1,16 @@
 package org.libremc.weLoveCapitalism;
 
-import org.bukkit.Bukkit;
-import org.bukkit.block.Chest;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 import org.libremc.weLoveCapitalism.commands.WLCCommand;
-import org.libremc.weLoveCapitalism.listener.BlockBreakListener;
-import org.libremc.weLoveCapitalism.listener.BlockPlaceListener;
-import org.libremc.weLoveCapitalism.listener.InternalCommandListener;
-import org.libremc.weLoveCapitalism.listener.PlayerInteractListener;
+import org.libremc.weLoveCapitalism.listener.*;
 
-import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
-import net.milkbowl.vault.economy.EconomyResponse;
-import net.milkbowl.vault.permission.Permission;
 
-import javax.annotation.Nullable;
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.UUID;
 
 public final class WeLoveCapitalism extends JavaPlugin {
 
@@ -48,24 +35,37 @@ public final class WeLoveCapitalism extends JavaPlugin {
         }
 
         this.getCommand("wlc").setExecutor(new WLCCommand());
+        this.getCommand("wlc").setTabCompleter(new TabComplete());
         getServer().getPluginManager().registerEvents(new BlockPlaceListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
         getServer().getPluginManager().registerEvents(new InternalCommandListener(), this);
         getServer().getPluginManager().registerEvents(new BlockBreakListener(), this);
-
+        getServer().getPluginManager().registerEvents(new GovernmentDeletionListener(), this);
 
         setupEconomy();
 
         try {
             db = new Database(CHESTSHOP_DB_PATH);
         } catch (SQLException | IOException e) {
-            getLogger().warning("LibreMC Core: Failed to open SQL database:" + e.getMessage());
+            getLogger().warning("WLC: Failed to open SQL database:" + e.getMessage());
             throw new RuntimeException(e);
         }
 
         try {
             ChestShopManager.Chestshops = Database.parseChestShops();
         } catch (SQLException | IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            TariffManager.Tariffs = Database.parseTariffs();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            EmbargoManager.Embargoes = Database.parseEmbargoes();
+        } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 
@@ -81,6 +81,8 @@ public final class WeLoveCapitalism extends JavaPlugin {
             throw new RuntimeException(e);
         }
     }
+
+
 
     private boolean setupEconomy() {
         if (getServer().getPluginManager().getPlugin("Vault") == null) {

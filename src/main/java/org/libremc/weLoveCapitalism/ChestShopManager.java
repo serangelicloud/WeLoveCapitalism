@@ -1,14 +1,18 @@
 package org.libremc.weLoveCapitalism;
 
+import com.palmergames.bukkit.towny.TownyAPI;
+import com.palmergames.bukkit.towny.object.Nation;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Block;
-import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
 import org.bukkit.block.sign.Side;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitTask;
+import org.libremc.weLoveCapitalism.datatypes.ChestShop;
+import org.libremc.weLoveCapitalism.datatypes.WLCPlayer;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -20,16 +24,17 @@ public class ChestShopManager {
 
     public static HashSet<ChestShop> Chestshops;
 
+
     public static boolean createChestShop(Player player, Block sign_block, Block chest_block){
         player.sendMessage("Creating chest shop");
-        player.sendMessage("Do '/wlc set <amount>' with the item you want to sell in your hand");
+        player.sendMessage("Do '/wlc set <amount> <price>' with the item you want to sell in your hand");
 
         WLCPlayer wlcplayer = WLCPlayerManager.createWLCPlayer(player);
         wlcplayer.setCreatingShop(true);
         wlcplayer.setSetItem(null); // Reset any previous item
 
-        // Schedule a task to check after 10 seconds
-        Bukkit.getScheduler().runTaskLater(Bukkit.getServer().getPluginManager().getPlugin("WeLoveCapitalism"), () -> {
+        // Schedule a task to check after 15 seconds
+        BukkitTask task = Bukkit.getScheduler().runTaskLater(WeLoveCapitalism.getInstance(), () -> {
             if (!wlcplayer.isCreatingShop()) {
                 return;
             }
@@ -41,18 +46,9 @@ public class ChestShopManager {
                 return;
             }
 
-            // Process the shop creation
-            Sign sign = (Sign) sign_block.getState();
-            writeToSign(sign, item);
+        }, 20 * 15); // 15 seconds
 
-            player.sendMessage("Done!");
-
-            ChestShop shop = new ChestShop(sign, (Chest)chest_block.getState(), player.getUniqueId().toString(), item, 100, 0);
-
-            ChestShopManager.addChestShop(shop);
-
-            wlcplayer.setCreatingShop(false);
-        }, 20 * 10); // 10 seconds
+        wlcplayer.setTask(task);
 
         return true;
     }
@@ -66,14 +62,19 @@ public class ChestShopManager {
         }
     }
 
-    public static void writeToSign(Sign sign, ItemStack item){
-        sign.getSide(Side.FRONT).setLine(0, "Chest shop");
-        sign.getSide(Side.FRONT).setLine(1, item.getType().name().replace('_', ' '));
-        sign.getSide(Side.FRONT).setLine(3, item.getAmount() + "x");
+    public static void writeToSign(Sign sign, Player player){
+        sign.getSide(Side.FRONT).setLine(0, ChatColor.LIGHT_PURPLE + player.getName() + "'s");
+        sign.getSide(Side.FRONT).setLine(2, "Chest shop");
+        sign.getSide(Side.FRONT).setGlowingText(true);
         sign.update();
     }
 
     public static void removeChestShop(ChestShop chestshop){
+        try {
+            Database.deleteChestShop(chestshop);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         Chestshops.remove(chestshop);
     }
 
@@ -97,24 +98,21 @@ public class ChestShopManager {
         return null;
     }
 
-    public static void buyChestShop(ChestShop shop, Player player, int amount){
+    public static void buyChestShop(ChestShop shop, Player player, int amount) throws SQLException {
         Inventory chest_inventory = shop.getChest().getInventory();
         Inventory player_inventory = player.getInventory();
-        int stock = 0;
+        Nation player_nation = TownyAPI.getInstance().getNation(player);
         long required_gold = amount * shop.getPrice();
-
-        for(ItemStack stack : chest_inventory.getContents()){
-
-            if(stack == null){
-                continue;
-            }
-            
-            if(stack.getType().equals(shop.getItem().getType())){
-                stock += stack.getAmount();
+        if(player_nation != null){
+            int tariff = TariffManager.getTariffPercentage(shop, player_nation);
+            if(tariff != 0){
+                required_gold = (long)(Math.ceil(shop.getPrice() * (((double)tariff / 100) + 1)));
             }
         }
 
-        if(stock < amount * shop.getItem().getAmount()){
+        long stock = shop.getStock();
+
+        if(stock < (long) amount * shop.getItem().getAmount()){
             player.sendMessage("Shop doesn't have enough stock. Only has " + stock + " in stock");
             return;
         }
@@ -141,6 +139,9 @@ public class ChestShopManager {
         WeLoveCapitalism.getEconomy().withdrawPlayer(player, required_gold);
 
         ItemStack stack_to_remove = new ItemStack(shop.getItem().getType(), shop.getItem().getAmount() * amount);
+
+        stack_to_remove.setItemMeta(item.getItemMeta());
+
         chest_inventory.removeItem(stack_to_remove);
 
         player.sendMessage(ChatColor.AQUA + "Bought " + amount * shop.getItem().getAmount() + "x of " + shop.getItemFormatted());

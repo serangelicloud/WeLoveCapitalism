@@ -1,13 +1,12 @@
 package org.libremc.weLoveCapitalism.listener;
 
 import com.palmergames.bukkit.towny.TownyAPI;
-import org.bukkit.Location;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.block.Chest;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.libremc.weLoveCapitalism.ChestShop;
+import org.libremc.weLoveCapitalism.datatypes.ChestShop;
 import org.libremc.weLoveCapitalism.ChestShopManager;
 
 
@@ -20,15 +19,9 @@ public class BlockBreakListener implements Listener {
             return;
         }
 
-        if(event.getBlock().getType() != Material.CHEST){
+        if(event.getBlock().getType() != Material.CHEST && event.getBlock().getType() != Material.OAK_WALL_SIGN){
             return;
         }
-
-        if(event.getBlock().getType() != Material.OAK_WALL_SIGN){
-            return;
-        }
-
-        Location block_location = event.getBlock().getLocation();
 
         ChestShop by_chest = ChestShopManager.getChestShopByChest(event.getBlock());
         ChestShop by_sign = ChestShopManager.getChestShopBySign(event.getBlock());

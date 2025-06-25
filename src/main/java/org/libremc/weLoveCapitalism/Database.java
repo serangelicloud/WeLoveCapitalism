@@ -9,6 +9,9 @@ import org.bukkit.block.sign.Side;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
+import org.libremc.weLoveCapitalism.datatypes.ChestShop;
+import org.libremc.weLoveCapitalism.datatypes.Embargo;
+import org.libremc.weLoveCapitalism.datatypes.Tariff;
 import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import java.io.ByteArrayInputStream;
@@ -19,6 +22,7 @@ import java.sql.*;
 import java.util.HashSet;
 import java.util.StringTokenizer;
 import java.util.UUID;
+
 
 public class Database {
     private final Statement statement;
@@ -35,6 +39,22 @@ public class Database {
             );
             """;
 
+    private static final String SQL_TARIFF_INIT_QUERY = """
+            CREATE TABLE IF NOT EXISTS tariff_table(
+                tariffing_nation_uuid STRING NOT NULL,
+                tariffed_nation_uuid STRING NOT NULL,
+                tariff_percentage INTEGER NOT NULL
+            );
+            """;
+
+    private static final String SQL_EMBARGO_INIT_QUERY = """
+            CREATE TABLE IF NOT EXISTS embargo_table(
+                embargoing_nation_uuid STRING NOT NULL,
+                embargoed_nation_uuid STRING NOT NULL
+            );
+            """;
+
+
     public Database(String dbFileName) throws SQLException, IOException {
         String dbPath = new File(WeLoveCapitalism.getInstance().getDataFolder(), dbFileName).getAbsolutePath();
 
@@ -46,6 +66,22 @@ public class Database {
         Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
         statement = connection.createStatement();
         statement.executeUpdate(SQL_CHEST_SHOP_INIT_QUERY);
+        statement.executeUpdate(SQL_TARIFF_INIT_QUERY);
+        statement.executeUpdate(SQL_EMBARGO_INIT_QUERY);
+        statement.close();
+    }
+
+    public static void deleteChestShop(ChestShop shop) throws SQLException {
+        String query = "DELETE FROM chest_shop_table WHERE uuid_owner = ? AND chest_block_location = ? AND sign_block_location = ?;";
+
+        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        statement.setString(1, shop.getOwner().toString());
+        statement.setString(2, serializeLocation(shop.getChest().getLocation()));
+        statement.setString(3, serializeLocation(shop.getSign().getLocation()));
+
+        statement.execute();
+
+        statement.close();
     }
 
     public static void writeChestShop(ChestShop shop) throws SQLException, IOException {
@@ -98,9 +134,177 @@ public class Database {
             shop_set.add(shop);
         }
 
+        statement.close();
+        set.close();
+
         return shop_set;
 
     }
+
+    public static void writeTariff(Tariff tariff) throws SQLException {
+        String query = "INSERT INTO tariff_table (tariffing_nation_uuid, tariffed_nation_uuid, tariff_percentage) VALUES(?, ?, ?);";
+
+        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        statement.setString(1, tariff.getGovernmentTariffing().toString());
+        statement.setString(2, tariff.getGovernmentTariffed().toString());
+        statement.setInt(3, tariff.getPercentage());
+
+        statement.execute();
+
+        statement.close();
+    }
+
+    public static void removeTariff(Tariff tariff) throws SQLException {
+        String query = "DELETE FROM tariff_table WHERE tariffing_nation_uuid = ? AND tariffed_nation_uuid = ?;";
+
+        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        statement.setString(1, tariff.getGovernmentTariffing().toString());
+        statement.setString(2, tariff.getGovernmentTariffed().toString());
+
+        statement.execute();
+
+        statement.close();
+    }
+
+
+    public static HashSet<Tariff> parseTariffs() throws SQLException {
+
+        HashSet<Tariff> tariff_set = new HashSet<>();
+
+        String query = "SELECT tariffing_nation_uuid, tariffed_nation_uuid, tariff_percentage FROM tariff_table";
+
+        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        ResultSet set = statement.executeQuery();
+
+        while(set.next()){
+            tariff_set.add(new Tariff(UUID.fromString(set.getString(1)), UUID.fromString(set.getString(2)), set.getInt(3)));
+        }
+
+        statement.close();
+        set.close();
+
+        return tariff_set;
+    }
+
+    public static HashSet<Tariff> getTariffsByGovernment(UUID government_uuid) throws SQLException {
+
+        HashSet<Tariff> tariff_set = new HashSet<>();
+
+        String query = "SELECT tariffing_nation_uuid, tariffed_nation_uuid, tariff_percentage FROM tariff_table WHERE tariffing_nation_uuid = ?";
+
+        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+
+        statement.setString(1, government_uuid.toString());
+
+        ResultSet set = statement.executeQuery();
+
+        while(set.next()){
+            tariff_set.add(new Tariff(UUID.fromString(set.getString(1)), UUID.fromString(set.getString(2)), set.getInt(3)));
+        }
+
+        statement.close();
+        set.close();
+
+        return tariff_set;
+    }
+
+    public static HashSet<Tariff> getTariffsToGovernment(UUID government_uuid) throws SQLException {
+
+        HashSet<Tariff> tariff_set = new HashSet<>();
+
+        String query = "SELECT tariffing_nation_uuid, tariffed_nation_uuid, tariff_percentage FROM tariff_table WHERE tariffed_nation_uuid = ?";
+
+        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+
+        statement.setString(1, government_uuid.toString());
+
+        ResultSet set = statement.executeQuery();
+
+        while(set.next()){
+            tariff_set.add(new Tariff(UUID.fromString(set.getString(1)), UUID.fromString(set.getString(2)), set.getInt(3)));
+        }
+
+        statement.close();
+        set.close();
+
+        return tariff_set;
+    }
+
+    public static void writeEmbargo(Embargo embargo) throws SQLException {
+        String query = "INSERT INTO embargo_table (embargoing_nation_uuid, embargoed_nation_uuid) VALUES(?, ?);";
+
+        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        statement.setString(1, embargo.getEmbargoingNation().toString());
+        statement.setString(2, embargo.getEmbargoedNation().toString());
+
+        statement.execute();
+        statement.close();
+    }
+
+    public static void removeEmbargo(Embargo embargo) throws SQLException {
+        String query = "DELETE FROM embargo_table WHERE embargoing_nation_uuid = ? AND embargoed_nation_uuid = ?;";
+
+        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        statement.setString(1, embargo.getEmbargoingNation().toString());
+        statement.setString(2, embargo.getEmbargoedNation().toString());
+
+        statement.execute();
+        statement.close();
+    }
+
+    public static HashSet<Embargo> parseEmbargoes() throws SQLException {
+        HashSet<Embargo> embargoSet = new HashSet<>();
+        String query = "SELECT embargoing_nation_uuid, embargoed_nation_uuid FROM embargo_table";
+
+        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        ResultSet set = statement.executeQuery();
+
+        while(set.next()) {
+            embargoSet.add(new Embargo(UUID.fromString(set.getString(1)), UUID.fromString(set.getString(2))));
+        }
+
+        statement.close();
+        set.close();
+
+        return embargoSet;
+    }
+
+    public static HashSet<UUID> getEmbargoesByGovernment(UUID governmentUuid) throws SQLException {
+        HashSet<UUID> embargoedNations = new HashSet<>();
+        String query = "SELECT embargoed_nation_uuid FROM embargo_table WHERE embargoing_nation_uuid = ?";
+
+        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        statement.setString(1, governmentUuid.toString());
+        ResultSet set = statement.executeQuery();
+
+        while(set.next()) {
+            embargoedNations.add(UUID.fromString(set.getString(1)));
+        }
+
+        statement.close();
+        set.close();
+
+        return embargoedNations;
+    }
+
+    public static HashSet<UUID> getEmbargoesToGovernment(UUID governmentUuid) throws SQLException {
+        HashSet<UUID> embargoingNations = new HashSet<>();
+        String query = "SELECT embargoing_nation_uuid FROM embargo_table WHERE embargoed_nation_uuid = ?";
+
+        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        statement.setString(1, governmentUuid.toString());
+        ResultSet set = statement.executeQuery();
+
+        while(set.next()) {
+            embargoingNations.add(UUID.fromString(set.getString(1)));
+        }
+
+        statement.close();
+        set.close();
+
+        return embargoingNations;
+    }
+
 
     public static String serializeItemStack(ItemStack item) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -133,17 +337,6 @@ public class Database {
         double y = Double.parseDouble(tok.nextToken());
         double z = Double.parseDouble(tok.nextToken());
         return new Location(Bukkit.getWorld("world"), x, y, z);
-    }
-
-    public static String serializeSign(Sign sign){
-        return sign.getSide(Side.FRONT).getLine(0) + "|" + sign.getSide(Side.FRONT).getLine(1) + "|" + sign.getSide(Side.FRONT).getLine(2) + "|" + sign.getSide(Side.FRONT).getLine(3);
-    }
-
-    public static void deserializeSign(Sign sign, String data){
-        StringTokenizer tok = new StringTokenizer(data, "|");
-        for(int i = 0; i < 4; i++){
-            sign.getSide(Side.FRONT).setLine(i, tok.nextToken());
-        }
     }
 
     public Statement getStatement() {

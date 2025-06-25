@@ -5,29 +5,28 @@ import org.bukkit.ChatColor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.libremc.weLoveCapitalism.ChestShopManager;
-import org.libremc.weLoveCapitalism.WLCPlayer;
-import org.libremc.weLoveCapitalism.WLCPlayerManager;
-import org.libremc.weLoveCapitalism.WeLoveCapitalism;
+import org.libremc.weLoveCapitalism.*;
+import org.libremc.weLoveCapitalism.datatypes.WLCPlayer;
+
+import java.sql.SQLException;
 
 public class InternalCommandListener implements Listener {
     @EventHandler
-    public static void onCommand(PlayerCommandPreprocessEvent event){
+    public static void onCommand(PlayerCommandPreprocessEvent event) throws SQLException {
         if(event.getMessage().equalsIgnoreCase("/wlc-internal-buy")){
 
             WLCPlayer wlcplayer = WLCPlayerManager.getWLCPlayer(event.getPlayer());
 
             if(wlcplayer == null){
                 Bukkit.getLogger().severe("[WLC] WLCPlayer is null for " + event.getPlayer());
+                return;
             }
 
-            ChestShopManager.buyChestShop(wlcplayer.getBuyingShop(), event.getPlayer(), wlcplayer.getAmount());
-
-            wlcplayer.setAmount(1);
+            ChestShopManager.buyChestShop(wlcplayer.getBuyingShop(), event.getPlayer(), wlcplayer.getMultiplier());
 
             event.setCancelled(true);
         }else if(event.getMessage().equalsIgnoreCase("/wlc-internal-set_amount")){
-            event.getPlayer().sendMessage("Use /wlc amount <multiplier> to set your amount");
+            event.getPlayer().sendMessage("Use /wlc multiplier <multiplier> to set your multiplier");
             event.setCancelled(true);
         }else if(event.getMessage().equalsIgnoreCase("/wlc-internal-collect_earnings")){
             WLCPlayer wlcplayer = WLCPlayerManager.getWLCPlayer(event.getPlayer());
@@ -40,6 +39,7 @@ public class InternalCommandListener implements Listener {
 
             if(storage == 0){
                 event.getPlayer().sendMessage(ChatColor.DARK_AQUA + "You are broke!");
+                event.setCancelled(true);
                 return;
             }
 
@@ -47,7 +47,20 @@ public class InternalCommandListener implements Listener {
 
             wlcplayer.getBuyingShop().setGoldStorage(0);
 
-            event.getPlayer().sendMessage(ChatColor.AQUA + "Withdrew " + storage + "g " + "from the chest shop");
+            Log.playerMessage(event.getPlayer(), "Withdrew " + storage + "g " + "from the chest shop");
+
+            event.setCancelled(true);
+        }else if(event.getMessage().equalsIgnoreCase("/wlc-internal-view_item")){
+            WLCPlayer wlcplayer = WLCPlayerManager.getWLCPlayer(event.getPlayer());
+            ItemGUI inv = new ItemGUI(wlcplayer.getBuyingShop().getItem());
+            inv.openInventory(event.getPlayer());
+
+            event.setCancelled(true);
+        }else if(event.getMessage().equalsIgnoreCase("/wlc-internal-delete_shop")){
+            WLCPlayer wlcplayer = WLCPlayerManager.getWLCPlayer(event.getPlayer());
+            ChestShopManager.removeChestShop(wlcplayer.getBuyingShop());
+
+            Log.playerMessage(event.getPlayer(), "Removed your shop");
 
             event.setCancelled(true);
         }

@@ -1,8 +1,7 @@
-package org.libremc.weLoveCapitalism;
+package org.libremc.weLoveCapitalism.datatypes;
 
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.StringTokenizer;
@@ -23,6 +22,16 @@ public class ChestShop {
         this.price = price;
         this.gold_storage = gold_storage;
     }
+
+    public ChestShop(Sign sign, Chest chest, String uuid, ItemStack item, long price) {
+        this.sign = sign;
+        this.chest = chest;
+        this.owner_uuid = uuid;
+        this.item = item;
+        this.price = price;
+        this.gold_storage = 0;
+    }
+
 
     public Sign getSign() {
         return sign;
@@ -91,5 +100,22 @@ public class ChestShop {
 
     public void setGoldStorage(long gold_storage) {
         this.gold_storage = gold_storage;
+    }
+
+    public long getStock(){
+        long stock = 0;
+
+        for(ItemStack stack : getChest().getInventory().getContents()){
+
+            if(stack == null){
+                continue;
+            }
+
+            if(stack.getType().equals(getItem().getType()) && stack.getItemMeta().equals(getItem().getItemMeta())){
+                stock += stack.getAmount();
+            }
+        }
+
+        return stock;
     }
 }
