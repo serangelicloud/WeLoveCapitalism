@@ -5,7 +5,6 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
-import org.bukkit.block.sign.Side;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.io.BukkitObjectInputStream;
 import org.bukkit.util.io.BukkitObjectOutputStream;
@@ -24,7 +23,7 @@ import java.util.StringTokenizer;
 import java.util.UUID;
 
 
-public class Database {
+public class ChestshopDatabase {
     private final Statement statement;
 
     private static final String SQL_CHEST_SHOP_INIT_QUERY = """
@@ -55,7 +54,7 @@ public class Database {
             """;
 
 
-    public Database(String dbFileName) throws SQLException, IOException {
+    public ChestshopDatabase(String dbFileName) throws SQLException, IOException {
         String dbPath = new File(WeLoveCapitalism.getInstance().getDataFolder(), dbFileName).getAbsolutePath();
 
         File file = new File(dbPath);
@@ -74,7 +73,7 @@ public class Database {
     public static void deleteChestShop(ChestShop shop) throws SQLException {
         String query = "DELETE FROM chest_shop_table WHERE uuid_owner = ? AND chest_block_location = ? AND sign_block_location = ?;";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
         statement.setString(1, shop.getOwner().toString());
         statement.setString(2, serializeLocation(shop.getChest().getLocation()));
         statement.setString(3, serializeLocation(shop.getSign().getLocation()));
@@ -87,7 +86,7 @@ public class Database {
     public static void writeChestShop(ChestShop shop) throws SQLException, IOException {
         String query = "INSERT INTO chest_shop_table (uuid_owner, chest_block_location, sign_block_location, item, price, gold_storage) VALUES(?, ?, ?, ?, ?, ?);";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
         statement.setString(1, shop.getOwner().toString());
         statement.setString(2, serializeLocation(shop.getChest().getLocation()));
         statement.setString(3, serializeLocation(shop.getSign().getLocation()));
@@ -103,7 +102,7 @@ public class Database {
         HashSet<ChestShop> shop_set = new HashSet<>();
         String query = "SELECT chest_shop_id, uuid_owner, chest_block_location, sign_block_location, item, price, gold_storage from chest_shop_table";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
         ResultSet set = statement.executeQuery();
 
         while(set.next()){
@@ -144,7 +143,7 @@ public class Database {
     public static void writeTariff(Tariff tariff) throws SQLException {
         String query = "INSERT INTO tariff_table (tariffing_nation_uuid, tariffed_nation_uuid, tariff_percentage) VALUES(?, ?, ?);";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
         statement.setString(1, tariff.getGovernmentTariffing().toString());
         statement.setString(2, tariff.getGovernmentTariffed().toString());
         statement.setInt(3, tariff.getPercentage());
@@ -157,7 +156,7 @@ public class Database {
     public static void removeTariff(Tariff tariff) throws SQLException {
         String query = "DELETE FROM tariff_table WHERE tariffing_nation_uuid = ? AND tariffed_nation_uuid = ?;";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
         statement.setString(1, tariff.getGovernmentTariffing().toString());
         statement.setString(2, tariff.getGovernmentTariffed().toString());
 
@@ -173,7 +172,7 @@ public class Database {
 
         String query = "SELECT tariffing_nation_uuid, tariffed_nation_uuid, tariff_percentage FROM tariff_table";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
         ResultSet set = statement.executeQuery();
 
         while(set.next()){
@@ -192,7 +191,7 @@ public class Database {
 
         String query = "SELECT tariffing_nation_uuid, tariffed_nation_uuid, tariff_percentage FROM tariff_table WHERE tariffing_nation_uuid = ?";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
 
         statement.setString(1, government_uuid.toString());
 
@@ -214,7 +213,7 @@ public class Database {
 
         String query = "SELECT tariffing_nation_uuid, tariffed_nation_uuid, tariff_percentage FROM tariff_table WHERE tariffed_nation_uuid = ?";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
 
         statement.setString(1, government_uuid.toString());
 
@@ -233,7 +232,7 @@ public class Database {
     public static void writeEmbargo(Embargo embargo) throws SQLException {
         String query = "INSERT INTO embargo_table (embargoing_nation_uuid, embargoed_nation_uuid) VALUES(?, ?);";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
         statement.setString(1, embargo.getEmbargoingNation().toString());
         statement.setString(2, embargo.getEmbargoedNation().toString());
 
@@ -244,7 +243,7 @@ public class Database {
     public static void removeEmbargo(Embargo embargo) throws SQLException {
         String query = "DELETE FROM embargo_table WHERE embargoing_nation_uuid = ? AND embargoed_nation_uuid = ?;";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
         statement.setString(1, embargo.getEmbargoingNation().toString());
         statement.setString(2, embargo.getEmbargoedNation().toString());
 
@@ -256,7 +255,7 @@ public class Database {
         HashSet<Embargo> embargoSet = new HashSet<>();
         String query = "SELECT embargoing_nation_uuid, embargoed_nation_uuid FROM embargo_table";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
         ResultSet set = statement.executeQuery();
 
         while(set.next()) {
@@ -273,7 +272,7 @@ public class Database {
         HashSet<UUID> embargoedNations = new HashSet<>();
         String query = "SELECT embargoed_nation_uuid FROM embargo_table WHERE embargoing_nation_uuid = ?";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
         statement.setString(1, governmentUuid.toString());
         ResultSet set = statement.executeQuery();
 
@@ -291,7 +290,7 @@ public class Database {
         HashSet<UUID> embargoingNations = new HashSet<>();
         String query = "SELECT embargoing_nation_uuid FROM embargo_table WHERE embargoed_nation_uuid = ?";
 
-        PreparedStatement statement = WeLoveCapitalism.db.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
         statement.setString(1, governmentUuid.toString());
         ResultSet set = statement.executeQuery();
 

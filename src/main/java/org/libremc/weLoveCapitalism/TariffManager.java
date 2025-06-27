@@ -4,7 +4,6 @@ import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Government;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
-import org.bukkit.Bukkit;
 import org.libremc.weLoveCapitalism.datatypes.ChestShop;
 import org.libremc.weLoveCapitalism.datatypes.Tariff;
 
@@ -20,7 +19,7 @@ public class TariffManager {
         Tariffs.add(tariff);
 
         try {
-            Database.writeTariff(tariff);
+            ChestshopDatabase.writeTariff(tariff);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -30,7 +29,7 @@ public class TariffManager {
     public static void removeTariff(Tariff tariff){
         Tariffs.remove(tariff);
         try {
-            Database.removeTariff(tariff);
+            ChestshopDatabase.removeTariff(tariff);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -44,7 +43,7 @@ public class TariffManager {
 
 
         /* Check if this town is tariffed by player_nation */
-        HashSet<Tariff> town_tariffs = Database.getTariffsByGovernment(player_nation.getUUID());
+        HashSet<Tariff> town_tariffs = ChestshopDatabase.getTariffsByGovernment(player_nation.getUUID());
 
         if(!town_tariffs.isEmpty()){
 
@@ -75,7 +74,7 @@ public class TariffManager {
     public static int getTariffPercentage(Government government, Nation player_nation) {
         HashSet<Tariff> tariffs = null;
         try {
-            tariffs = Database.getTariffsByGovernment(player_nation.getUUID());
+            tariffs = ChestshopDatabase.getTariffsByGovernment(player_nation.getUUID());
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -92,7 +91,7 @@ public class TariffManager {
     public static @Nullable Tariff getTariff(Government government, Nation player_nation){
         HashSet<Tariff> tariffs = null;
         try {
-            tariffs = Database.getTariffsByGovernment(player_nation.getUUID());
+            tariffs = ChestshopDatabase.getTariffsByGovernment(player_nation.getUUID());
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

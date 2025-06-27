@@ -1,10 +1,8 @@
 package org.libremc.weLoveCapitalism.commands;
 
 import com.palmergames.bukkit.towny.TownyAPI;
-import com.palmergames.bukkit.towny.object.Government;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
@@ -13,6 +11,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 import org.libremc.weLoveCapitalism.*;
 import org.libremc.weLoveCapitalism.datatypes.ChestShop;
 import org.libremc.weLoveCapitalism.datatypes.Embargo;
@@ -21,6 +20,7 @@ import org.libremc.weLoveCapitalism.datatypes.WLCPlayer;
 
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.UUID;
 
 public class WLCCommand implements CommandExecutor {
@@ -28,7 +28,7 @@ public class WLCCommand implements CommandExecutor {
 
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String s, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, String[] args) {
 
         if(!(sender instanceof Player player)){
             sender.sendMessage("Only players can execute this command!");
@@ -45,21 +45,21 @@ public class WLCCommand implements CommandExecutor {
         if(args[0].equalsIgnoreCase("set")){
 
             if(args.length != 3){
-                player.sendMessage("wlc: proper usage /wlc set <amount> <price>");
+                Log.playerMessage(player, "Proper usage: /wlc set <amount> <price>");
             }
 
             int amount = 0;
             try {
                 amount = Integer.parseInt(args[1]);
             }catch (NumberFormatException e){
-                player.sendMessage("The amount isn't a valid number!");
+                Log.playerMessage(player, "The amount isn't a valid number!");
             }
 
             if(amount <= 0){
-                player.sendMessage("The amount must be positive!");
+                Log.playerMessage(player, "The amount must be positive!");
                 return true;
             }else if(amount > 64){
-                player.sendMessage("The amount cannot be over 64!");
+                Log.playerMessage(player, "The amount cannot be over 64!");
                 return true;
             }
 
@@ -67,20 +67,20 @@ public class WLCCommand implements CommandExecutor {
             try {
                 price = Integer.parseInt(args[2]);
             }catch (NumberFormatException e){
-                player.sendMessage("The price isn't a valid number!");
+                Log.playerMessage(player, "The price isn't a valid number!");
             }
 
             if(price < 0){
-                player.sendMessage("The price cannot be negative!");
+                Log.playerMessage(player, "The price cannot be negative!");
                 return true;
             }else if(price > 20736){
-                player.sendMessage("The price cannot be over 20736g!");
+                Log.playerMessage(player, "The price cannot be over 20736g!");
                 return true;
             }
 
             WLCPlayer wlcplayer = WLCPlayerManager.createWLCPlayer(player);
             if(!wlcplayer.isCreatingShop()){
-                player.sendMessage("You are not creating a shop!");
+                Log.playerMessage(player, "You are not creating a shop!");
                 return true;
             }
 
@@ -96,7 +96,7 @@ public class WLCCommand implements CommandExecutor {
             Sign sign = (Sign) wlcplayer.getSignBlock().getState();
             ChestShopManager.writeToSign(sign, player);
 
-            player.sendMessage(ChatColor.AQUA + "Created a chestshop");
+            Log.playerMessage(player, ChatColor.AQUA + "Created a chestshop");
 
             ChestShop shop = new ChestShop(sign, (Chest)wlcplayer.getChestBlock().getState(), player.getUniqueId().toString(), stack, price);
 
@@ -107,30 +107,30 @@ public class WLCCommand implements CommandExecutor {
 
         }else if(args[0].equalsIgnoreCase("multiplier")){
             if(args.length != 2){
-                player.sendMessage("wlc: proper usage /wlc multiplier <multiplier>");
+                Log.playerMessage(player, "Proper usage: /wlc multiplier <multiplier>");
             }
 
             WLCPlayer wlcplayer = WLCPlayerManager.createWLCPlayer(player);
 
             int amount;
             try {
-                amount = Integer.valueOf(args[1]);
+                amount = Integer.parseInt(args[1]);
             }catch (NumberFormatException e){
-                player.sendMessage("Multiplier isn't a valid number");
+                Log.playerMessage(player, "Multiplier isn't a valid number");
                 return true;
             }
 
             if(amount <= 0){
-                player.sendMessage("Multiplier must be positive");
+                Log.playerMessage(player, "Multiplier must be positive");
                 return true;
             }else if(amount > 100){
-                player.sendMessage("Multiplier can't be over 100x");
+                Log.playerMessage(player, "Multiplier can't be over 100x");
                 return true;
             }
 
             wlcplayer.setMultiplier(amount);
 
-            player.sendMessage(ChatColor.AQUA + "Set your buying multiplier to " + amount);
+            Log.playerMessage(player, ChatColor.AQUA + "Set your buying multiplier to " + amount);
         }else if(args[0].equalsIgnoreCase("get")){
             if(args.length < 3){
                 Log.playerMessage(player, "Proper usage: /wlc get tariffs/embargoes <nation/town>");
@@ -149,16 +149,16 @@ public class WLCCommand implements CommandExecutor {
                         return true;
                     }
 
-                    HashSet<Tariff> tariffs = null;
+                    HashSet<Tariff> tariffs;
 
                     if(nation != null){
                         try {
-                            tariffs = Database.getTariffsByGovernment(nation.getUUID());
+                            tariffs = ChestshopDatabase.getTariffsByGovernment(nation.getUUID());
                         } catch (SQLException e) {
                             throw new RuntimeException(e);
                         }
 
-                        player.sendMessage("\nNations/towns tariffed by "+ ChatColor.AQUA + "" + ChatColor.BOLD + government_name + ChatColor.RESET);
+                        player.sendMessage("\nNations/towns tariffed by "+ ChatColor.AQUA + ChatColor.BOLD + government_name + ChatColor.RESET);
 
                         if(tariffs.isEmpty()){
                             player.sendMessage("None");
@@ -186,22 +186,20 @@ public class WLCCommand implements CommandExecutor {
 
                     if(town != null){
                         try {
-                            tariffs = Database.getTariffsToGovernment(town.getUUID());
+                            tariffs = ChestshopDatabase.getTariffsToGovernment(town.getUUID());
                         } catch (SQLException e) {
                             throw new RuntimeException(e);
                         }
-                    }else if(nation != null){
+                    }else {
                         try {
-                            tariffs = Database.getTariffsToGovernment(nation.getUUID());
+                            tariffs = ChestshopDatabase.getTariffsToGovernment(nation.getUUID());
                         } catch (SQLException e) {
                             throw new RuntimeException(e);
                         }
-                    }else{
-                        return true;
                     }
 
 
-                    player.sendMessage("\nNations tariffing "+ ChatColor.AQUA + "" + ChatColor.BOLD + government_name + ChatColor.RESET);
+                    player.sendMessage("\nNations tariffing "+ ChatColor.AQUA + ChatColor.BOLD + government_name + ChatColor.RESET);
 
                     if(tariffs.isEmpty()){
                         player.sendMessage("None");
@@ -232,12 +230,12 @@ public class WLCCommand implements CommandExecutor {
                     if(embargo_nation != null){
                         HashSet<UUID> embargoed_governments;
                         try {
-                            embargoed_governments = Database.getEmbargoesByGovernment(embargo_nation.getUUID());
+                            embargoed_governments = ChestshopDatabase.getEmbargoesByGovernment(embargo_nation.getUUID());
                         } catch (SQLException e) {
                             throw new RuntimeException(e);
                         }
 
-                        player.sendMessage("\nNations/towns embargoed by "+ ChatColor.AQUA + "" + ChatColor.BOLD + government_name + ChatColor.RESET);
+                        player.sendMessage("\nNations/towns embargoed by "+ ChatColor.AQUA + ChatColor.BOLD + government_name + ChatColor.RESET);
 
                         if(!embargoed_governments.isEmpty()){
                             for(UUID uuid : embargoed_governments){
@@ -262,20 +260,20 @@ public class WLCCommand implements CommandExecutor {
 
                     if(embargo_nation != null){
                         try {
-                            embargoing_nations = Database.getEmbargoesToGovernment(embargo_nation.getUUID());
+                            embargoing_nations = ChestshopDatabase.getEmbargoesToGovernment(embargo_nation.getUUID());
                         } catch (SQLException e) {
                             throw new RuntimeException(e);
                         }
                     }else{
                         try {
-                            embargoing_nations = Database.getEmbargoesToGovernment(embargo_town.getUUID());
+                            embargoing_nations = ChestshopDatabase.getEmbargoesToGovernment(embargo_town.getUUID());
                         } catch (SQLException e) {
                             throw new RuntimeException(e);
                         }
                     }
 
 
-                    player.sendMessage("\nNations embargoing "+ ChatColor.AQUA + "" + ChatColor.BOLD + government_name + ChatColor.RESET);
+                    player.sendMessage("\nNations embargoing "+ ChatColor.AQUA + ChatColor.BOLD + government_name + ChatColor.RESET);
 
                     if(!embargoing_nations.isEmpty()){
                         for(UUID uuid : embargoing_nations){
@@ -288,11 +286,7 @@ public class WLCCommand implements CommandExecutor {
                                 player.sendMessage(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + _town.getName() + " (town)" + ChatColor.RESET);
                             }else{
                                 /* If government doesn't exist anymore then remove it */
-                                if(embargo_nation != null){
-                                    EmbargoManager.removeEmbargo(new Embargo(embargo_nation.getUUID(), uuid));
-                                }else{
-                                    EmbargoManager.removeEmbargo(new Embargo(embargo_town.getUUID(), uuid));
-                                }
+                                EmbargoManager.removeEmbargo(new Embargo(Objects.requireNonNullElse(embargo_nation, embargo_town).getUUID(), uuid));
                             }
                         }
                     }else{
@@ -319,17 +313,17 @@ public class WLCCommand implements CommandExecutor {
             Town town = TownyAPI.getInstance().getTown(government_name);
 
             if(player_nation == null){
-                player.sendMessage("You are not in a nation and therefore cannot introduce new trade laws");
+                Log.playerMessage(player, "You are not in a nation and therefore cannot introduce new trade laws");
                 return true;
             }
 
-            if(!TownyAPI.getInstance().getResident(player).isKing()){
-                player.sendMessage("Only the leader of a nation can introduce trade laws");
+            if(!Objects.requireNonNull(TownyAPI.getInstance().getResident(player)).isKing()){
+                Log.playerMessage(player, "Only the leader of a nation can introduce trade laws");
                 return true;
             }
 
             if(player_nation.equals(nation)){
-                player.sendMessage("You can't add trade laws against your own nation!");
+                Log.playerMessage(player, "You can't add trade laws against your own nation!");
                 return true;
             }
 
@@ -344,7 +338,7 @@ public class WLCCommand implements CommandExecutor {
                     int percentage;
 
                     try {
-                        percentage = Integer.valueOf(args[3]);
+                        percentage = Integer.parseInt(args[3]);
                     }catch (NumberFormatException e){
                         Log.playerMessage(player,"Percentage isn't a valid number!");
                         return true;
@@ -404,6 +398,7 @@ public class WLCCommand implements CommandExecutor {
                     if(town != null){
                         if(EmbargoManager.getEmbargo(town, player_nation) != null){
                             Log.playerMessage(player, "This government is already embargoed by you!");
+                            return true;
                         }
 
                         Embargo embargo = new Embargo(player_nation.getUUID(), town.getUUID());
@@ -415,6 +410,7 @@ public class WLCCommand implements CommandExecutor {
                     }else if(nation != null){
                         if(EmbargoManager.getEmbargo(nation, player_nation) != null){
                             Log.playerMessage(player, "This government is already embargoed by you!");
+                            return true;
                         }
 
                         Embargo embargo = new Embargo(player_nation.getUUID(), nation.getUUID());
@@ -445,8 +441,8 @@ public class WLCCommand implements CommandExecutor {
             Nation nation = TownyAPI.getInstance().getNation(government_name);
             Town town = TownyAPI.getInstance().getTown(government_name);
 
-            if(nation == null && town== null){
-                player.sendMessage("Government " + args[2] + " doesn't exist!");
+            if(nation == null && town == null){
+                Log.playerMessage(player, "Government " + args[2] + " doesn't exist!");
                 return true;
             }
 
@@ -455,13 +451,13 @@ public class WLCCommand implements CommandExecutor {
                 return true;
             }
 
-            if(!TownyAPI.getInstance().getResident(player).isKing()){
-                player.sendMessage("Only the leader of a nation can remove trade laws");
+            if(!Objects.requireNonNull(TownyAPI.getInstance().getResident(player)).isKing()){
+                Log.playerMessage(player, "Only the leader of a nation can remove trade laws");
                 return true;
             }
 
             if(player_nation.equals(nation)){
-                player.sendMessage("You can't remove trade laws against your own nation!");
+                Log.playerMessage(player, "You can't remove trade laws against your own nation!");
                 return true;
             }
 
@@ -500,7 +496,9 @@ public class WLCCommand implements CommandExecutor {
                     if(nation != null){
                         Embargo embargo;
                         if((embargo = EmbargoManager.getEmbargo(nation, player_nation)) != null){
-                            Log.playerMessage(player, "Removed tariff on " + town.getName() + " (nation)!");
+                            if (town != null) {
+                                Log.playerMessage(player, "Removed tariff on " + town.getName() + " (nation)!");
+                            }
                             EmbargoManager.removeEmbargo(embargo);
                             return true;
                         }

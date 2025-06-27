@@ -7,7 +7,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
-import org.libremc.weLoveCapitalism.Database;
+import org.libremc.weLoveCapitalism.ChestshopDatabase;
 import org.libremc.weLoveCapitalism.datatypes.Tariff;
 
 import java.sql.SQLException;
@@ -51,7 +51,7 @@ public class TabComplete implements TabCompleter {
                 List<String> names = new ArrayList<>();
                 if((nation = TownyAPI.getInstance().getNation(player)) != null){
                     try {
-                        for(Tariff tariff : Database.getTariffsByGovernment(nation.getUUID())){
+                        for(Tariff tariff : ChestshopDatabase.getTariffsByGovernment(nation.getUUID())){
                             Nation nat = TownyAPI.getInstance().getNation(tariff.getGovernmentTariffed());
                             Town town = TownyAPI.getInstance().getTown(tariff.getGovernmentTariffed());
 

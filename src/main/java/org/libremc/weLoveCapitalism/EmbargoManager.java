@@ -4,7 +4,6 @@ import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Government;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.Town;
-import org.bukkit.Bukkit;
 import org.libremc.weLoveCapitalism.datatypes.Embargo;
 
 import javax.annotation.Nullable;
@@ -19,7 +18,7 @@ public class EmbargoManager {
         Embargoes.add(embargo);
 
         try {
-            Database.writeEmbargo(embargo);
+            ChestshopDatabase.writeEmbargo(embargo);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -29,7 +28,7 @@ public class EmbargoManager {
         Embargoes.remove(embargo);
 
         try {
-            Database.removeEmbargo(embargo);
+            ChestshopDatabase.removeEmbargo(embargo);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -52,7 +51,7 @@ public class EmbargoManager {
 
         HashSet<UUID> embargoes;
         try {
-            embargoes = Database.getEmbargoesByGovernment(embargoer.getUUID());
+            embargoes = ChestshopDatabase.getEmbargoesByGovernment(embargoer.getUUID());
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

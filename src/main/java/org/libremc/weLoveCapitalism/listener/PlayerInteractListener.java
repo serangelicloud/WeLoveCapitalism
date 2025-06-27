@@ -4,6 +4,7 @@ package org.libremc.weLoveCapitalism.listener;
 
 import com.palmergames.bukkit.towny.TownyAPI;
 import com.palmergames.bukkit.towny.object.Nation;
+import com.palmergames.bukkit.towny.object.Town;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -71,15 +72,16 @@ public class PlayerInteractListener implements Listener {
 
             return;
         }
+        Town town = TownyAPI.getInstance().getTown(shop.getSign().getLocation());
 
-        String town_name = TownyAPI.getInstance().getTownName(shop.getSign().getLocation());
-
-        if(town_name == null){
+        if(town == null){
             Bukkit.getServer().getLogger().info("Shop is not in a town, deleting");
             ChestShopManager.removeChestShop(shop);
             event.setCancelled(false);
             return;
         }
+
+        String town_name = town.getName();
 
         player.sendMessage("");
 
@@ -100,6 +102,15 @@ public class PlayerInteractListener implements Listener {
         player.spigot().sendMessage(view_text);
 
         Nation nation = TownyAPI.getInstance().getNation(player);
+
+        if(nation != null){
+            for(UUID uuid : ChestshopDatabase.getEmbargoesByGovernment(nation.getUUID())){
+                if(town.getUUID().equals(uuid)){
+                    player.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "Your nation is embargoing this shop!");
+                    return;
+                }
+            }
+        }
 
         player.sendMessage(ChatColor.AQUA + "" + shop.getItem().getAmount() + "x " + shop.getItemFormatted());
         player.sendMessage(ChatColor.AQUA + "Buying multiplier: " + ChatColor.DARK_AQUA + wlcplayer.getMultiplier() + "x");

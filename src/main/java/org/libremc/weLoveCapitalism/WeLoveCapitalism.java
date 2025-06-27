@@ -1,7 +1,5 @@
 package org.libremc.weLoveCapitalism;
 
-import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.libremc.weLoveCapitalism.commands.WLCCommand;
@@ -17,10 +15,13 @@ public final class WeLoveCapitalism extends JavaPlugin {
     private static Economy econ = null;
 
     public static final String CHESTSHOP_DB_PATH = "chestshops.db";
+    public static final String TRADES_DB_PATH = "trade_history.db";
 
     static WeLoveCapitalism instance;
 
-    public static Database db;
+    public static ChestshopDatabase chestshopdb;
+    public static TradesDatabase tradehistorydb;
+
 
     public static WeLoveCapitalism getInstance(){
         return instance;
@@ -45,26 +46,33 @@ public final class WeLoveCapitalism extends JavaPlugin {
         setupEconomy();
 
         try {
-            db = new Database(CHESTSHOP_DB_PATH);
+            chestshopdb = new ChestshopDatabase(CHESTSHOP_DB_PATH);
         } catch (SQLException | IOException e) {
             getLogger().warning("WLC: Failed to open SQL database:" + e.getMessage());
             throw new RuntimeException(e);
         }
 
         try {
-            ChestShopManager.Chestshops = Database.parseChestShops();
+            tradehistorydb = new TradesDatabase(TRADES_DB_PATH);
+        } catch (SQLException | IOException e) {
+            getLogger().warning("WLC: Failed to open SQL database:" + e.getMessage());
+            throw new RuntimeException(e);
+        }
+
+        try {
+            ChestShopManager.Chestshops = ChestshopDatabase.parseChestShops();
         } catch (SQLException | IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
 
         try {
-            TariffManager.Tariffs = Database.parseTariffs();
+            TariffManager.Tariffs = ChestshopDatabase.parseTariffs();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 
         try {
-            EmbargoManager.Embargoes = Database.parseEmbargoes();
+            EmbargoManager.Embargoes = ChestshopDatabase.parseEmbargoes();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -76,7 +84,7 @@ public final class WeLoveCapitalism extends JavaPlugin {
     @Override
     public void onDisable() {
         try {
-            db.getStatement().close();
+            chestshopdb.getStatement().close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

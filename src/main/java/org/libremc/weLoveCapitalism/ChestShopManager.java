@@ -56,7 +56,7 @@ public class ChestShopManager {
     public static void addChestShop(ChestShop chestshop){
         Chestshops.add(chestshop);
         try {
-            Database.writeChestShop(chestshop);
+            ChestshopDatabase.writeChestShop(chestshop);
         } catch (SQLException | IOException e) {
             throw new RuntimeException(e);
         }
@@ -71,7 +71,7 @@ public class ChestShopManager {
 
     public static void removeChestShop(ChestShop chestshop){
         try {
-            Database.deleteChestShop(chestshop);
+            ChestshopDatabase.deleteChestShop(chestshop);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }

@@ -18,10 +18,7 @@ public class ItemGUI implements Listener {
     private final Inventory inv;
 
     public ItemGUI(ItemStack item) {
-        // Create a new inventory, with no owner (as this isn't a real inventory), a size of nine, called example
         inv = Bukkit.createInventory(null, 9, "Chestshop preview");
-
-        // Put the items into the inventory
 
         ItemStack display = item.clone();
 
