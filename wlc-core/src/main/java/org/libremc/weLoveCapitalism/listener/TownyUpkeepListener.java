@@ -5,6 +5,8 @@ import com.palmergames.bukkit.towny.event.NewDayEvent;
 import com.palmergames.bukkit.towny.object.Nation;
 import com.palmergames.bukkit.towny.object.economy.BankAccount;
 import org.bukkit.Bukkit;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.libremc.weLoveCapitalism.InsolvencyManager;
 import org.libremc.weLoveCapitalism.TariffManager;
 import org.libremc.weLoveCapitalism.TradeManager;
@@ -13,7 +15,8 @@ import org.libremc.weLoveCapitalism.datatypes.Upkeep;
 
 import java.util.HashSet;
 
-public class TownyUpkeepListener {
+public class TownyUpkeepListener implements Listener {
+    @EventHandler
     void onNewDay(NewDayEvent event) {
         for(Nation nation : TownyAPI.getInstance().getNations()){
             if(event.getFallenNations().contains(nation.getName())){

@@ -14,10 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.libremc.weLoveCapitalism.*;
-import org.libremc.weLoveCapitalism.datatypes.ChestShop;
-import org.libremc.weLoveCapitalism.datatypes.Embargo;
-import org.libremc.weLoveCapitalism.datatypes.Tariff;
-import org.libremc.weLoveCapitalism.datatypes.WLCPlayer;
+import org.libremc.weLoveCapitalism.datatypes.*;
 
 import java.sql.SQLException;
 import java.util.HashSet;
@@ -145,6 +142,7 @@ public class WLCCommand implements CommandExecutor {
                     Nation nation = TownyAPI.getInstance().getNation(government_name);
                     Town town = TownyAPI.getInstance().getTown(government_name);
 
+
                     if(nation == null && town == null){
 
                         return true;
@@ -168,6 +166,7 @@ public class WLCCommand implements CommandExecutor {
                                 Nation _nation = TownyAPI.getInstance().getNation(tariff.getGovernmentTariffed());
                                 Town _town = TownyAPI.getInstance().getTown(tariff.getGovernmentTariffed());
 
+                                int upkeep = TradeManager.getTradeLawUpkeep(nation, tariff.getGovernmentTariffed(), Upkeep.TradeLawType.TARIFF);
 
                                 if(_nation == null && _town == null){
                                     continue;
@@ -176,9 +175,12 @@ public class WLCCommand implements CommandExecutor {
                                 if(_nation == null){
                                     String town_tariffed_name = _town.getName();
                                     player.sendMessage(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + town_tariffed_name + " (town)" + ChatColor.RESET + ": " + ChatColor.GOLD + tariff.getPercentage() + "%" + ChatColor.RESET);
+                                    player.sendMessage(ChatColor.AQUA + "To be paid at the end of the day: " + ChatColor.GOLD + ChatColor.BOLD + upkeep + "g");
+
                                 }else{
                                     String nation_tariffed_name = _nation.getName();
                                     player.sendMessage(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + nation_tariffed_name + " (nation)" + ChatColor.RESET + ": " + ChatColor.GOLD + tariff.getPercentage() + "%" + ChatColor.RESET);
+                                    player.sendMessage(ChatColor.AQUA + "To be paid at the end of the day: " + ChatColor.GOLD + ChatColor.BOLD + upkeep + "g");
                                 }
 
                             }
@@ -217,8 +219,8 @@ public class WLCCommand implements CommandExecutor {
                             player.sendMessage(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + nation_tariffed_name + ChatColor.RESET + ": " + ChatColor.GOLD + tariff.getPercentage() + "%" + ChatColor.RESET);
                         }
                     }
-
                     return true;
+
                 case "embargoes":
                     Nation embargo_nation = TownyAPI.getInstance().getNation(government_name);
                     Town embargo_town = TownyAPI.getInstance().getTown(government_name);
@@ -243,10 +245,17 @@ public class WLCCommand implements CommandExecutor {
                                 Nation _nation = TownyAPI.getInstance().getNation(embargo.getEmbargoedNation());
                                 Town _town = TownyAPI.getInstance().getTown(embargo.getEmbargoedNation());
 
+                                int upkeep = TradeManager.getTradeLawUpkeep(embargo_nation, embargo.getEmbargoedNation(), Upkeep.TradeLawType.EMBARGO);
+
+
+
                                 if(_nation != null){
                                     player.sendMessage(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + _nation.getName() + " (nation)" + ChatColor.RESET);
+                                    player.sendMessage(ChatColor.AQUA + "To be paid at the end of the day: " + ChatColor.GOLD + ChatColor.BOLD + upkeep + "g");
+
                                 }else if(_town != null){
                                     player.sendMessage(ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + _town.getName() + " (town)" + ChatColor.RESET);
+                                    player.sendMessage(ChatColor.AQUA + "To be paid at the end of the day: " + ChatColor.GOLD + ChatColor.BOLD + upkeep + "g");
                                 }else{
                                     /* If government doesn't exist anymore then remove it */
                                     EmbargoManager.removeEmbargo(new Embargo(embargo_nation.getUUID(), embargo.getEmbargoedNation()));

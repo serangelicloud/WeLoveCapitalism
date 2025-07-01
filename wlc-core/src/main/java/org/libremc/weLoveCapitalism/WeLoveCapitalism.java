@@ -49,6 +49,8 @@ public final class WeLoveCapitalism extends JavaPlugin implements WLCAPIInterfac
         getServer().getPluginManager().registerEvents(new InternalCommandListener(), this);
         getServer().getPluginManager().registerEvents(new BlockBreakListener(), this);
         getServer().getPluginManager().registerEvents(new GovernmentDeletionListener(), this);
+        getServer().getPluginManager().registerEvents(new TownyUpkeepListener(), this);
+
 
         setupEconomy();
 

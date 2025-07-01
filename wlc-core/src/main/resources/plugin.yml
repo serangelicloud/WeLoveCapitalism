@@ -2,6 +2,7 @@ name: WeLoveCapitalism
 version: '1.0-SNAPSHOT'
 main: org.libremc.weLoveCapitalism.WeLoveCapitalism
 api-version: '1.21'
+depend: [Towny]
 commands:
   wlc:
     description: WeLoveCapitalism command

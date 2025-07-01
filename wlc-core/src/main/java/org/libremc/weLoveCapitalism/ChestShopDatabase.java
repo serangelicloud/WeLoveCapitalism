@@ -65,11 +65,11 @@ public class ChestShopDatabase {
         }
 
         Connection connection = DriverManager.getConnection("jdbc:sqlite:" + dbPath);
+
         statement = connection.createStatement();
         statement.executeUpdate(SQL_CHEST_SHOP_INIT_QUERY);
         statement.executeUpdate(SQL_TARIFF_INIT_QUERY);
         statement.executeUpdate(SQL_EMBARGO_INIT_QUERY);
-        statement.close();
     }
 
     public static void deleteChestShop(ChestShop shop) throws SQLException {

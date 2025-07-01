@@ -1,5 +1,6 @@
 package org.libremc.weLoveCapitalism;
 
+import org.bukkit.Bukkit;
 import org.libremc.weLoveCapitalism.datatypes.Trade;
 
 import java.io.File;
@@ -7,6 +8,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.HashSet;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 public class TradesDatabase {
 
@@ -41,7 +43,6 @@ public class TradesDatabase {
 
         statement = connection.createStatement();
         statement.executeUpdate(SQL_TRADES_INIT_QUERY);
-        statement.close();
     }
 
     Statement getStatement(){
@@ -50,15 +51,15 @@ public class TradesDatabase {
 
     public static void writeTrade(Trade trade) throws SQLException {
         String query = """
-        INSERT INTO trade_table (
-            chest_shop_id, item, amount, price, 
-            uuid_owner, uuid_buyer, town_uuid, 
+        INSERT INTO trade_table(
+            chest_shop_id, item, amount, price,
+            uuid_owner, uuid_buyer, town_uuid,
             nation_uuid, town_buyer_uuid, nation_buyer_uuid,
             timestamp
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """;
 
-        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.tradehistorydb.getStatement().getConnection().prepareStatement(query);
 
         statement.setInt(1, trade.getChestShopId());
         statement.setString(2, trade.getItem());
@@ -95,7 +96,7 @@ public class TradesDatabase {
     public static void removeTrade(int tradeId) throws SQLException {
         String query = "DELETE FROM trade_table WHERE trade_id = ?;";
 
-        PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
+        PreparedStatement statement = WeLoveCapitalism.tradehistorydb.getStatement().getConnection().prepareStatement(query);
         statement.setInt(1, tradeId);
         statement.execute();
         statement.close();
@@ -103,41 +104,43 @@ public class TradesDatabase {
 
     public static HashSet<Trade> parseTrades() throws SQLException {
         HashSet<Trade> trades = new HashSet<>();
-        String query = "SELECT * FROM trade_table;";
+        String query = "SELECT * FROM trade_table";
 
-        try (PreparedStatement statement = WeLoveCapitalism.chestshopdb.getStatement().getConnection().prepareStatement(query);
-             ResultSet resultSet = statement.executeQuery()) {
+        PreparedStatement statement = WeLoveCapitalism.tradehistorydb.getStatement().getConnection().prepareStatement(query);
+        ResultSet resultSet = statement.executeQuery();
 
-            while (resultSet.next()) {
-                Integer tradeId = resultSet.getInt("trade_id");
-                int chestShopId = resultSet.getInt("chest_shop_id");
-                String item = resultSet.getString("item");
-                int amount = resultSet.getInt("amount");
-                int price = resultSet.getInt("price");
-                long timestamp = resultSet.getInt("timestamp");
+        while (resultSet.next()) {
+            int tradeId = resultSet.getInt("trade_id");
+            int chestShopId = resultSet.getInt("chest_shop_id");
+            String item = resultSet.getString("item");
+            int amount = resultSet.getInt("amount");
+            int price = resultSet.getInt("price");
+            long timestamp = resultSet.getInt("timestamp");
 
-                // Parse UUIDs - handle potential null values for optional fields
-                UUID ownerUuid = UUID.fromString(resultSet.getString("uuid_owner"));
-                UUID buyerUuid = UUID.fromString(resultSet.getString("uuid_buyer"));
-                UUID townUuid = UUID.fromString(resultSet.getString("town_uuid"));
+            // Parse UUIDs - handle potential null values for optional fields
+            UUID ownerUuid = UUID.fromString(resultSet.getString("uuid_owner"));
+            UUID buyerUuid = UUID.fromString(resultSet.getString("uuid_buyer"));
+            UUID townUuid = UUID.fromString(resultSet.getString("town_uuid"));
 
-                UUID nationUuid = resultSet.getString("nation_uuid") != null ?
-                        UUID.fromString(resultSet.getString("nation_uuid")) : null;
-                UUID townBuyerUuid = resultSet.getString("town_buyer_uuid") != null ?
-                        UUID.fromString(resultSet.getString("town_buyer_uuid")) : null;
-                UUID nationBuyerUuid = resultSet.getString("nation_buyer_uuid") != null ?
-                        UUID.fromString(resultSet.getString("nation_buyer_uuid")) : null;
+            UUID nationUuid = resultSet.getString("nation_uuid") != null ?
+                    UUID.fromString(resultSet.getString("nation_uuid")) : null;
+            UUID townBuyerUuid = resultSet.getString("town_buyer_uuid") != null ?
+                    UUID.fromString(resultSet.getString("town_buyer_uuid")) : null;
+            UUID nationBuyerUuid = resultSet.getString("nation_buyer_uuid") != null ?
+                    UUID.fromString(resultSet.getString("nation_buyer_uuid")) : null;
 
-                Trade trade = new Trade(
-                        tradeId, chestShopId, item, amount, price,
-                        ownerUuid, buyerUuid, townUuid,
-                        nationUuid, townBuyerUuid, nationBuyerUuid,
-                        timestamp
-                );
+            Trade trade = new Trade(
+                    tradeId, chestShopId, item, amount, price,
+                    ownerUuid, buyerUuid, townUuid,
+                    nationUuid, townBuyerUuid, nationBuyerUuid,
+                    timestamp
+            );
 
-                trades.add(trade);
-            }
+            trades.add(trade);
         }
+
+        statement.close();
+        resultSet.close();
 
         return trades;
     }
