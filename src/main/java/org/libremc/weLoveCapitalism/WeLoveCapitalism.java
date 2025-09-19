@@ -86,7 +86,7 @@ public final class WeLoveCapitalism extends JavaPlugin{
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
+        TradeApi.start();
     }
 
 
