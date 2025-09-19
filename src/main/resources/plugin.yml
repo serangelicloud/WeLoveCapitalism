@@ -1,0 +1,23 @@
+name: WeLoveCapitalism
+version: '1.0-SNAPSHOT'
+main: org.libremc.weLoveCapitalism.WeLoveCapitalism
+api-version: '1.21'
+depend: [Towny]
+commands:
+  wlc:
+    description: WeLoveCapitalism command
+  wlc-internal-buy:
+    permission: wlc.internal
+  wlc-internal-set_amount:
+    permission: wlc.internal
+  wlc-internal-collect_earnings:
+    permission: wlc.internal
+  wlc-internal-view_item:
+    permission: wlc.internal
+  wlc-internal-delete_shop:
+    permission: wlc.internal
+  wlc-internal-confirm_tariffs:
+    permission: wlc.internal
+  wlc-internal-confirm_embargoes:
+    permission: wlc.internal
+
