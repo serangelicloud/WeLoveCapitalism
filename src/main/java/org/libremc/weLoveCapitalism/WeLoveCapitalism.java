@@ -86,7 +86,7 @@ public final class WeLoveCapitalism extends JavaPlugin{
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        TradeApi.start();
+        TradeApi.start(); // starts server to access the trade_history db
     }
 
 
@@ -116,7 +116,14 @@ public final class WeLoveCapitalism extends JavaPlugin{
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
+        try {
+            spark.Spark.stop();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
+
 
 
 

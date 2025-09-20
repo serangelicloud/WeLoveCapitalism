@@ -30,20 +30,20 @@ public class TradeApi {
         System.out.println("[WLC] Trade API running on port 8080");
     }
 
-    // --- Standalone entry point ---
-    public static void main(String[] args) {
-        System.out.println("[WLC] Starting Trade API in standalone mode...");
+    // // --- Standalone entry point for testing ---
+    // public static void main(String[] args) {
+    //     System.out.println("[WLC] Starting Trade API in standalone mode...");
 
-        try {
-            // Use the same DB file your plugin uses
-            db = new TradesDatabaseStandalone("trade_history.db");
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.err.println("[WLC] Failed to open database. Exiting.");
-            System.exit(1);
-        }
+    //     try {
+    //         // Use the same DB file your plugin uses
+    //         db = new TradesDatabaseStandalone("trade_history.db");
+    //     } catch (SQLException | IOException e) {
+    //         e.printStackTrace();
+    //         System.err.println("[WLC] Failed to open database. Exiting.");
+    //         System.exit(1);
+    //     }
 
-        // Start the API
-        start();
-    }
+    //     // Start the API
+    //     start();
+    // }
 }
